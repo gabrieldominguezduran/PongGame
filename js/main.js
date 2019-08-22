@@ -1,204 +1,186 @@
-class Vec {
-    constructor(x = 0, y = 0 ) {
-        this.x = x;
-        this.y = y;
+var canvas = document.getElementsByTagName('canvas')[0];
+		var canvasContext;
+    canvas.width= 900; 
+    canvas.height= 600;
+  
+        var canvasContext;
+        var ballX = 50;
+		var ballY = 50;
+		var ballSpeedX = 18;
+		var ballSpeedY = 18;
+		var player1Score = 0;
+		var player2Score = 0;
+		const WINNING_SCORE = 3;
 
-    }
-    get len() {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
-    }
-    set len(value) {
-        const fact = value / this.len;
-        this.x *= fact;
-        this.y *= fact;
-    }
-}
+		var showingWinScreen = false;
 
-class Rect{
-    constructor(w, h) {
-        this.pos = new Vec;
-        this.size = new Vec(w, h);
-    }
-    get left() {
-        return this.pos.x - this.size.x / 2;
-    }
-    get right() {
-        return this.pos.x + this.size.x / 2;
-    }
-    get top() {
-        return this.pos.y - this.size.y / 2;
-    }
-    get bottom() {
-        return this.pos.y + this.size.y / 2;
-    }
-}
-
-
-class Ball extends Rect{
-    constructor(){
-        super(10, 10);
-        this.vel = new Vec;
-    }
-}
-
-class Players extends Rect {
-    constructor() {
-        super(20, 100);
-        this.score = 0;
-    }
-}
-
-class Pong {
-    constructor(canvas) {
-        this._canvas = canvas;
-        this._context = canvas.getContext('2d');
-
-        this.ball = new Ball;
-        
-        this.players = [
-            new Players,
-            new Players,
-        ];
-            //players position
-        this.players[0].pos.x = 40;
-        this.players[1].pos.x = this._canvas.width - 40;
-        this.players.forEach(player => {
-            player.pos.y = this._canvas.height / 2;
-        });
-
-         let lastTime;
-         const callback =(millis) => {
-            if(lastTime) {
-               this.update((millis - lastTime)/ 1000);
-            }
-            lastTime = millis;
-            requestAnimationFrame(callback);
-        };
-        callback();
-        //score numbers
-       this.CHAR_PIXEL = 10; 
-       this.CHARTS = [
-            '111101101101111',
-            '010010010010010',
-            '111001111100111',
-            '111001111001111',
-            '101101111001001'
-        ].map(str => {
-            const canvas = document.createElement('canvas');
-            canvas.height = this.CHAR_PIXEL * 5;
-            canvas.width = this.CHAR_PIXEL * 3;
-            const context = canvas.getContext('2d');
-            context.fillStyle = '#fff';
-            str.split('').forEach((fill, i) => {
-                if(fill === '1') {
-                    context.fillRect(
-                        (i % 3) * this.CHAR_PIXEL, 
-                        (i / 3 | 0)* this.CHAR_PIXEL,
-                        this.CHAR_PIXEL,
-                        this.CHAR_PIXEL);
-                }
-            });
-            return canvas;
-        });
-
-        this.reset();
-
-    }
-
-    collide(player, ball) {
-        if (player.left < ball.right && player.right > ball.left && player.top <      ball.bottom && player.bottom > ball.top) {
-            const len = ball.vel.len;
-            ball.vel.x = - ball.vel.x;
-            ball.vel.y += 300 * (Math.random() - 0.3);//speed and ball direction
-            ball.vel.len = len * 1.05;
-
-        } 
-    }
-
-    draw() {
-
-        this._context.fillStyle = '#000';
-            this._context.fillRect(0, 0, this._canvas.width, this._canvas.height);
-
-            this.drawRect(this.ball);
-            this.players.forEach(player => this.drawRect(player));
-
-            this.drawScore();
-    }
-
-        drawRect(rect) {
-            this._context.fillStyle = '#fff';
-            this._context.fillRect(rect.left, rect.top,
-                                   rect.size.x, rect.size.y); 
-        }
-
-        drawScore() {
-            const align = this._canvas.width / 3;
-            const CHAR_W = this.CHAR_PIXEL / 4;
-            this.players.forEach((player, index) => {
-                const chars = player.score.toString().split('');
-                const offset = align * 
-                                (index + 1) -
-                                (CHAR_W * chars.length / 2) *
-                                this.CHAR_PIXEL / 2;
-
-                    chars.forEach((char, pos) => {
-                        this._context.drawImage(this.CHARTS[char|0],
-                                                offset + pos * CHAR_W, 20)
-                    });
-
-            });
-        }
-
-        reset() {
-            this.ball.pos.x = this._canvas.width / 2;
-            this.ball.pos.y = this._canvas.height / 2;
-
-            this.ball.vel.x = 0;
-            this.ball.vel.y = 0;
-        }
-
-        start() {
-            if (this.ball.vel.x === 0 && this.ball.vel.y === 0){
-                this.ball.vel.x = 300 * (Math.random() > 0.3 ? 1 : -1);
-                this.ball.vel.y = 300 * (Math.random() * 2 -1);
-                this.ball.vel.len = 250;
-            }
-        }
-        update(dt) {
-            this.ball.pos.x += this.ball.vel.x * dt;
-            this.ball.pos.y += this.ball.vel.y * dt;
-        
-            if (this.ball.left < 0 || this.ball.right > this._canvas.width) {
-                const playerId = this.ball.vel.x < 0 | 0;
-                this.players[playerId].score++;
-                this.reset();
-            }
-            if (this.ball.top < 0 || this.ball.bottom > this._canvas.height) {
-                this.ball.vel.y = -this.ball.vel.y;
-            }
-
-            this.players[1].pos.y = this.ball.pos.y;
-
-            this.players.forEach(player => this.collide(player, this.ball));
-        
-            this.draw();
-    }
-}
+		var paddle1Y = 250;
+		var paddle2Y = 250;
+		const PADDLE_THICKNESS = 14;
+        const PADDLE_HEIGHT = 130;
         
 
-const canvas = document.getElementById('pong');
-const pong = new Pong(canvas);
+		function calculateMousePos(evt) {
+			var rect = canvas.getBoundingClientRect();
+			var root = document.documentElement;
+			var mouseX = evt.clientX - rect.left - root.scrollLeft;
+			var mouseY = evt.clientY - rect.top - root.scrollTop;
+			return {
+				x:mouseX,
+				y:mouseY
+			};
+		}
 
-canvas.addEventListener('mousemove', event => {
-    pong.players[0].pos.y = event.offsetY;
-});
+		function handleMouseClick(evt) {
+			if(showingWinScreen) {
+				player1Score = 0;
+				player2Score = 0;
+				showingWinScreen = false;
+			}
+		}
 
-canvas.addEventListener('click', event => {
-    pong.start();
-});
+		window.onload = function() {
+			canvas = document.getElementById('gameCanvas');
+			canvasContext = canvas.getContext('2d');
+
+			var framesPerSecond = 30;
+			setInterval(function() {
+					moveEverything();
+					drawEverything();
+				}, 1000/framesPerSecond);
+
+			document.addEventListener('mousedown', handleMouseClick);
+
+			document.addEventListener('mousemove',
+				function(evt) {
+					var mousePos = calculateMousePos(evt);
+					paddle1Y = mousePos.y - (PADDLE_HEIGHT/2);
+				});
+		};
+
+		function ballReset() {
+			if(player1Score >= WINNING_SCORE ||
+				player2Score >= WINNING_SCORE) {
+
+				showingWinScreen = true;
+
+			}
+
+			ballSpeedX = -ballSpeedX;
+			ballX = canvas.width/2;
+			ballY = canvas.height/2;
+		}
+
+		function computerMovement() {
+			var paddle2YCenter = paddle2Y + (PADDLE_HEIGHT/2);
+			if(paddle2YCenter < ballY - 35) {
+				paddle2Y = paddle2Y + 60;
+  
+			}
+			else if(paddle2YCenter > ballY + 35) {
+				paddle2Y = paddle2Y - 60;
+			}
+		}
 
 
+		function moveEverything() {
+			if(showingWinScreen) {
+				return;
+			}
+		
+      
+			computerMovement();
 
+			ballX = ballX + ballSpeedX;
+			ballY = ballY + ballSpeedY;
 
+			if(ballX < 0) {
+				if(ballY > paddle1Y &&
+					ballY < paddle1Y+PADDLE_HEIGHT) {
+					ballSpeedX = -ballSpeedX;
+
+					var deltaY = ballY-(paddle1Y+PADDLE_HEIGHT/2);
+					ballSpeedY = deltaY * 0.35;
+				}
+				else {
+					player2Score++; // must be BEFORE ballReset()
+					ballReset();
+				}
+			}
+			if(ballX > canvas.width) {
+				if(ballY > paddle2Y &&
+					ballY < paddle2Y+PADDLE_HEIGHT) {
+					ballSpeedX = -ballSpeedX;
+
+					var deltaY = ballY-(paddle2Y+PADDLE_HEIGHT/2);
+					ballSpeedY = deltaY * 0.35;
+				}
+				else {
+					player1Score++; // must be BEFORE ballReset()
+					ballReset();
+				}
+			}
+			if(ballY < 0) {
+				ballSpeedY = -ballSpeedY;
+			}
+			if(ballY > canvas.height) {
+				ballSpeedY = -ballSpeedY;
+			}
+		}
+
+		function drawNet() {
+			for(var i=0;i<canvas.height;i+=40) {
+				colorRect(canvas.width/2-1,i,2,20,'white');
+			}
+		}
+
+		function drawEverything() {
+			// next line blanks out the screen with canvas color
+			colorRect(0,0,canvas.width,canvas.height,'#086B97');
+
+			if(showingWinScreen) {
+				canvasContext.fillStyle = 'white';
+        canvasContext.textAlign="center";
+				if(player1Score >= WINNING_SCORE) {
+          canvasContext.font="50px 'Press Start 2P', cursive";
+					canvasContext.fillText("You won", canvas.width/2, canvas.height/3);
+				} else if(player2Score >= WINNING_SCORE) {
+          canvasContext.font="50px 'Press Start 2P', cursive";
+					canvasContext.fillText("Computer won", canvas.width/2, canvas.height/3);
+				}
+        canvasContext.font="40px 'Press Start 2P', cursive";
+				canvasContext.fillText("click to continue", canvas.width/2, 350);
+				return;
+			}
+
+			drawNet();
+
+			// this is left player paddle
+      canvasContext.globalAlpha   = 1;
+			colorRect(0,paddle1Y,PADDLE_THICKNESS,PADDLE_HEIGHT,'white');
+
+			// this is right computer paddle
+			colorRect(canvas.width-PADDLE_THICKNESS,paddle2Y,PADDLE_THICKNESS,PADDLE_HEIGHT,'white');
+
+			// next line draws the ball
+			colorCircle(ballX, ballY, 10, 'white');
+      canvasContext.font="50px 'Press Start 2P', cursive";
+      canvasContext.globalAlpha   = 0.8;
+      canvasContext.fillStyle= 'white';
+			canvasContext.fillText(player1Score, 150, 100);
+			canvasContext.fillText(player2Score, canvas.width-150, 100);
+		}
+
+		function colorCircle(centerX, centerY, radius, drawColor) {
+			canvasContext.fillStyle = drawColor;
+      canvasContext.globalAlpha   = 0.6;
+			canvasContext.beginPath();
+			canvasContext.arc(centerX, centerY, radius, 0,Math.PI*2,true);
+			canvasContext.fill();
+		}
+
+		function colorRect(leftX,topY, width,height, drawColor) {
+			canvasContext.fillStyle = drawColor;
+			canvasContext.fillRect(leftX,topY, width,height);
+		}
 
