@@ -2,6 +2,6 @@
 
 Basic Pong Game made with JavaScript
 
-## Play it here:
+### Play it here:
 
 [Pong Game](https://gabrieldominguezduran.github.io/PongGame/)
