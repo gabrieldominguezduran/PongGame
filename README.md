@@ -1,3 +1,7 @@
-# PongGame
+# Pong Game
+
 Basic Pong Game made with JavaScript
-https://gabrieldominguezduran.github.io/PongGame/
+
+## Play it:
+
+[Pong Game](https://gabrieldominguezduran.github.io/PongGame/)
